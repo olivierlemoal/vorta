@@ -19,7 +19,6 @@ from vorta.utils import borg_compat, pretty_bytes
 from vorta.keyring.abc import VortaKeyring
 from vorta.keyring.db import VortaDBKeyring
 
-mutex = Lock()
 logger = logging.getLogger(__name__)
 
 FakeRepo = namedtuple('Repo', ['url', 'id', 'extra_borg_arguments', 'encryption'])
@@ -35,6 +34,7 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
     updated = QtCore.pyqtSignal(str)
     result = QtCore.pyqtSignal(dict)
     keyring = None  # Store keyring to minimize imports
+    mutex_repo = dict()
 
     def __init__(self, cmd, params, parent=None):
         """
@@ -90,11 +90,26 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
         self.cmd = cmd
         self.cwd = params.get('cwd', None)
         self.params = params
+        self.repo_id = self.params.get("repo_id", None)
+        if self.repo_id:
+            BorgThread.mutex_repo[self.repo_id] = Lock()
         self.process = None
 
     @classmethod
     def is_running(cls):
-        return mutex.locked()
+        """ Inquire if a backup is running on any repository."""
+        return any([rep.locked() for rep in cls.mutex_repo.values()])
+
+    @classmethod
+    def is_repo_busy(cls, repo_id=None):
+        """
+        Inquire if a backup is running on a specified repository id.
+
+        :param repo_id: Repository to query
+        """
+        if repo_id not in cls.mutex_repo:
+            return False
+        return cls.mutex_repo[repo_id].locked()
 
     @classmethod
     def prepare(cls, profile):
@@ -112,17 +127,17 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
         """
         ret = {'ok': False}
 
-        # Do checks to see if running Borg is possible.
-        if cls.is_running():
-            ret['message'] = trans_late('messages', 'Backup is already in progress.')
-            return ret
-
         if cls.prepare_bin() is None:
             ret['message'] = trans_late('messages', 'Borg binary was not found.')
             return ret
 
         if profile.repo is None:
             ret['message'] = trans_late('messages', 'Add a backup repository first.')
+            return ret
+
+        # Do checks to see if running Borg is possible.
+        if cls.is_repo_busy(profile.repo.id):
+            ret['message'] = trans_late('messages', 'Backup is already in progress on this repository.')
             return ret
 
         if not borg_compat.check('JSON_LOG'):
@@ -187,7 +202,8 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
 
     def run(self):
         self.started_event()
-        mutex.acquire()
+        if self.repo_id:
+            BorgThread.mutex_repo[self.repo_id].acquire()
         log_entry = EventLogModel(category='borg-run',
                                   subcommand=self.cmd[1],
                                   profile=self.params.get('profile_name', None)
@@ -272,7 +288,8 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
 
         self.process_result(result)
         self.finished_event(result)
-        mutex.release()
+        if self.repo_id:
+            BorgThread.mutex_repo[self.repo_id].release()
 
     def cancel(self):
         """
@@ -287,8 +304,8 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
                 os.killpg(os.getpgid(self.process.pid), signal.SIGTERM)
             self.quit()
             self.wait()
-            if mutex.locked():
-                mutex.release()
+            if self.repo_id and BorgThread.mutex_repo[self.repo_id].locked():
+                BorgThread.mutex_repo[self.repo_id].release()
 
     def process_result(self, result):
         pass
