@@ -1,5 +1,6 @@
 import sys
 import logging
+import random
 from PyQt5 import QtCore, QtDBus
 from vorta.models import SettingsModel
 
@@ -68,14 +69,14 @@ class DBusNotifications(VortaNotifications):
     URGENCY = {'info': 1, 'error': 2}
 
     def __init__(self):
-        pass
+        self.notify = None
 
     def _dbus_notify(self, header, msg, level='info'):
         item = "org.freedesktop.Notifications"
         path = "/org/freedesktop/Notifications"
         interface = "org.freedesktop.Notifications"
         app_name = "vorta"
-        v = QtCore.QVariant(12321)  # random int to identify all notifications
+        v = QtCore.QVariant(random.randrange(2**32))  # random int to identify each notifications
         if v.convert(QtCore.QVariant.UInt):
             id_replace = v
         icon = "com.borgbase.Vorta-symbolic"
@@ -84,11 +85,11 @@ class DBusNotifications(VortaNotifications):
         actions_list = QtDBus.QDBusArgument([], QtCore.QMetaType.QStringList)
         hint = {'urgency': self.URGENCY[level]}
         time = 5000   # milliseconds for display timeout
-
-        bus = QtDBus.QDBusConnection.sessionBus()
-        notify = QtDBus.QDBusInterface(item, path, interface, bus)
-        if notify.isValid():
-            x = notify.call(QtDBus.QDBus.AutoDetect, "Notify", app_name,
+        if not self.notify:
+            bus = QtDBus.QDBusConnection.sessionBus()
+            self.notify = QtDBus.QDBusInterface(item, path, interface, bus)
+        if self.notify.isValid():
+            x = self.notify.call(QtDBus.QDBus.AutoDetect, "Notify", app_name,
                             id_replace, icon, title, text,
                             actions_list, hint, time)
             if x.errorName():
