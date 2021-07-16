@@ -101,7 +101,7 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
         return any([rep.locked() for rep in cls.mutex_repo.values()])
 
     @classmethod
-    def is_repo_busy(cls, repo_id=None):
+    def is_repo_busy(cls, repo_id):
         """
         Inquire if a backup is running on a specified repository id.
 
