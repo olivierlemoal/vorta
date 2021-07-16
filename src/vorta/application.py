@@ -90,9 +90,8 @@ class VortaApp(QtSingleApplication):
         if profile is not None:
             if profile.repo is None:
                 logger.warning(f"Add a repository to {profile_name}")
-            # Wait a bit in case something is running
-            while BorgThread.is_running():
-                time.sleep(0.1)
+            if BorgThread.is_repo_busy(profile.repo.id):
+                logger.warning(f"Backup is already running on this repository.")
             self.create_backup_action(profile_id=profile.id)
         else:
             logger.warning(f"Invalid profile name {profile_name}")
@@ -154,10 +153,6 @@ class VortaApp(QtSingleApplication):
             self.open_main_window_action()
         elif message.startswith("create"):
             message = message[7:]  # Remove create
-            if BorgThread.is_running():
-                logger.warning("Cannot run while backups are already running")
-            else:
-                self.create_backups_cmdline(message)
 
     def set_borg_details_action(self):
         params = BorgVersionThread.prepare()
