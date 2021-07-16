@@ -94,7 +94,7 @@ class MainWindow(MainWindowBase, MainWindowUI):
             self.scheduleTab.toolBox.removeItem(1)
 
         # Connect to existing thread.
-        if BorgThread.is_running():
+        if BorgThread.is_repo_busy(self.current_profile):
             self.createStartBtn.setEnabled(False)
             self.createStartBtn.start()
             self.cancelButton.setEnabled(True)
@@ -144,6 +144,10 @@ class MainWindow(MainWindowBase, MainWindowUI):
         self.repoTab.populate_from_profile()
         self.sourceTab.populate_from_profile()
         self.scheduleTab.populate_from_profile()
+        if BorgThread.is_repo_busy(backup_profile_id):
+            self._toggle_buttons(create_enabled=False)
+        else:
+            self._toggle_buttons(create_enabled=True)
         SettingsModel.update({SettingsModel.str_value: self.current_profile.id}) \
             .where(SettingsModel.key == 'previous_profile_id') \
             .execute()
