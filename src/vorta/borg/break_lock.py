@@ -5,11 +5,11 @@ class BorgBreakThread(BorgThread):
 
     def started_event(self):
         self.app.backup_started_event.emit()
-        self.app.backup_progress_event.emit(self.tr('Breaking repository lock...'))
+        self.progress_event(self.tr('Breaking repository lock...'))
 
     def finished_event(self, result):
         self.app.backup_finished_event.emit(result)
-        self.app.backup_progress_event.emit(self.tr('Repository lock broken. Please redo your last action.'))
+        self.progress_event(self.tr('Repository lock broken. Please redo your last action.'))
         self.result.emit(result)
 
     @classmethod

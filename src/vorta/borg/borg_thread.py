@@ -177,6 +177,7 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
         ret['repo_url'] = profile.repo.url
         ret['extra_borg_arguments'] = profile.repo.extra_borg_arguments
         ret['profile_name'] = profile.name
+        ret['profile_id'] = profile.id
 
         ret['ok'] = True
 
@@ -243,7 +244,8 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
                                 'msgid': parsed.get('msgid'),
                                 'repo_url': self.params['repo_url'],
                                 'profile_name': self.params.get('profile_name'),
-                                'cmd': self.params['cmd'][1]
+                                'cmd': self.params['cmd'][1],
+                                'profile_id': self.params.get('profile_id')
                             }
                             self.app.backup_log_event.emit(
                                 f'{parsed["levelname"]}: {parsed["message"]}', context)
@@ -258,7 +260,7 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
                                 f"{translate('BorgThread','Deduplicated')}: {pretty_bytes(parsed['deduplicated_size'])}, "  # noqa: E501
                                 f"{translate('BorgThread','Compressed')}: {pretty_bytes(parsed['compressed_size'])}"
                             )
-                            self.app.backup_progress_event.emit(msg)
+                            self.progress_event(msg)
                     except json.decoder.JSONDecodeError:
                         msg = line.strip()
                         if msg:  # Log only if there is something to log.
@@ -309,6 +311,9 @@ class BorgThread(QtCore.QThread, BackupProfileMixin):
 
     def process_result(self, result):
         pass
+
+    def progress_event(self, fmt):
+        self.app.backup_progress_event.emit(fmt, self.params.get("profile_id", None))
 
     def started_event(self):
         self.updated.emit(self.tr('Task started'))

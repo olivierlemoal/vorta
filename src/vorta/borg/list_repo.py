@@ -7,12 +7,12 @@ class BorgListRepoThread(BorgThread):
 
     def started_event(self):
         self.app.backup_started_event.emit()
-        self.app.backup_progress_event.emit(self.tr('Refreshing archives...'))
+        self.progress_event(self.tr('Refreshing archives...'))
 
     def finished_event(self, result):
         self.app.backup_finished_event.emit(result)
         self.result.emit(result)
-        self.app.backup_progress_event.emit(self.tr('Refreshing archives done.'))
+        self.progress_event(self.tr('Refreshing archives done.'))
 
     @classmethod
     def prepare(cls, profile):

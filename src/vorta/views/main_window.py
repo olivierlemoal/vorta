@@ -110,11 +110,15 @@ class MainWindow(MainWindowBase, MainWindowUI):
         self.profileExportButton.setIcon(get_colored_icon('file-import-solid'))
         self.profileDeleteButton.setIcon(get_colored_icon('trash'))
 
-    def set_progress(self, text=''):
+    def set_progress(self, text='', profile_id=None):
+        if profile_id and profile_id != self.current_profile.id:
+            return
         self.progressText.setText(text)
         self.progressText.repaint()
 
-    def set_log(self, text=''):
+    def set_log(self, text='', context=None):
+        if context and context["profile_id"] != self.current_profile.id:
+            return
         self.logText.setText(text)
         self.logText.repaint()
 
@@ -144,6 +148,8 @@ class MainWindow(MainWindowBase, MainWindowUI):
         self.repoTab.populate_from_profile()
         self.sourceTab.populate_from_profile()
         self.scheduleTab.populate_from_profile()
+        self.set_log('')
+        self.set_progress('')
         if BorgThread.is_repo_busy(backup_profile_id):
             self._toggle_buttons(create_enabled=False)
         else:

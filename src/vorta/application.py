@@ -38,7 +38,7 @@ class VortaApp(QtSingleApplication):
     backup_finished_event = QtCore.pyqtSignal(dict)
     backup_cancelled_event = QtCore.pyqtSignal()
     backup_log_event = QtCore.pyqtSignal(str, dict)
-    backup_progress_event = QtCore.pyqtSignal(str)
+    backup_progress_event = QtCore.pyqtSignal(str, int)
 
     def __init__(self, args_raw, single_app=False):
         super().__init__(APP_ID, args_raw)
@@ -126,7 +126,7 @@ class VortaApp(QtSingleApplication):
         else:
             notifier = VortaNotifications.pick()
             notifier.deliver(self.tr('Vorta Backup'), translate('messages', msg['message']), level='error')
-            self.backup_progress_event.emit(translate('messages', msg['message']))
+            self.backup_progress_event.emit(translate('messages', msg['message']), profile_id)
 
     def open_main_window_action(self):
         self.main_window.show()
@@ -240,7 +240,7 @@ class VortaApp(QtSingleApplication):
     def break_lock(self, profile):
         params = BorgBreakThread.prepare(profile)
         if not params['ok']:
-            self.backup_progress_event.emit(params['message'])
+            self.backup_progress_event.emit(params['message'], profile.id)
             return
         thread = BorgBreakThread(params['cmd'], params, parent=self)
         thread.start()

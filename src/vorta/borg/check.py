@@ -5,12 +5,12 @@ class BorgCheckThread(BorgThread):
 
     def started_event(self):
         self.app.backup_started_event.emit()
-        self.app.backup_progress_event.emit(self.tr('Starting consistency check...'))
+        self.progress_event(self.tr('Starting consistency check...'))
 
     def finished_event(self, result):
         self.app.backup_finished_event.emit(result)
         self.result.emit(result)
-        self.app.backup_progress_event.emit(self.tr('Check completed.'))
+        self.progress_event(self.tr('Check completed.'))
 
     @classmethod
     def prepare(cls, profile):

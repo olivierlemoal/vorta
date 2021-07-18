@@ -6,12 +6,12 @@ class BorgPruneThread(BorgThread):
 
     def started_event(self):
         self.app.backup_started_event.emit()
-        self.app.backup_progress_event.emit(self.tr('Pruning old archives...'))
+        self.progress_event(self.tr('Pruning old archives...'))
 
     def finished_event(self, result):
         self.app.backup_finished_event.emit(result)
         self.result.emit(result)
-        self.app.backup_progress_event.emit(self.tr('Pruning done.'))
+        self.progress_event(self.tr('Pruning done.'))
 
     @classmethod
     def prepare(cls, profile):

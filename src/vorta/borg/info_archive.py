@@ -6,12 +6,14 @@ class BorgInfoArchiveThread(BorgThread):
 
     def started_event(self):
         self.app.backup_started_event.emit()
-        self.app.backup_progress_event.emit(self.tr('Refreshing archive...'))
+        self.progress_event(self.tr('Refreshing archive...'))
 
     def finished_event(self, result):
         self.app.backup_finished_event.emit(result)
         self.result.emit(result)
-        self.app.backup_progress_event.emit(self.tr('Refreshing archive done.'))
+        print("Finished refreshing")
+        print(self.params)
+        self.progress_event(self.tr('Refreshing archive done.'))
 
     @classmethod
     def prepare(cls, profile, archive_name):
