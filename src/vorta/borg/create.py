@@ -39,7 +39,7 @@ class BorgCreateThread(BorgThread):
 
     def started_event(self):
         self.app.backup_started_event.emit()
-        self.app.progress_event(self.tr('Backup started.'))
+        self.progress_event(self.tr('Backup started.'))
 
     def finished_event(self, result):
         self.app.backup_finished_event.emit(result)
